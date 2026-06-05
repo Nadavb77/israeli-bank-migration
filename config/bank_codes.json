@@ -1,0 +1,114 @@
+{
+  "_comment": "Bank of Israel official bank codes — PRE-MIGRATION (2-digit format)",
+  "_migration_note": "TODO (MIGRATION): update all keys from 2-digit to 3-digit (e.g. '10' → '010')",
+  "_generated": "2026-06-01",
+
+  "codes": {
+    "04": {
+      "name": "Bank Yahav",
+      "name_he": "בנק יהב",
+      "swift": "YAHVILITXXX",
+      "active": true,
+      "migrated_code": "004"
+    },
+    "10": {
+      "name": "Bank Leumi",
+      "name_he": "בנק לאומי",
+      "swift": "LUMIILITXXX",
+      "active": true,
+      "migrated_code": "010"
+    },
+    "11": {
+      "name": "Discount Bank",
+      "name_he": "בנק דיסקונט",
+      "swift": "DISCILIT",
+      "active": true,
+      "migrated_code": "011"
+    },
+    "12": {
+      "name": "Bank Hapoalim",
+      "name_he": "בנק הפועלים",
+      "swift": "POALILIT",
+      "active": true,
+      "migrated_code": "012"
+    },
+    "13": {
+      "name": "Union Bank (Igud)",
+      "name_he": "בנק איגוד",
+      "swift": "UNIOILIT",
+      "active": true,
+      "migrated_code": "013"
+    },
+    "14": {
+      "name": "Otzar Hahayal Bank",
+      "name_he": "בנק אוצר החייל",
+      "swift": "OTZRILIT",
+      "active": true,
+      "migrated_code": "014"
+    },
+    "17": {
+      "name": "Mercantile Discount Bank",
+      "name_he": "בנק מרכנתיל דיסקונט",
+      "swift": "MRCLILITMTE",
+      "active": true,
+      "migrated_code": "017"
+    },
+    "20": {
+      "name": "Mizrahi-Tefahot Bank",
+      "name_he": "בנק מזרחי-טפחות",
+      "swift": "MIZBILIT",
+      "active": true,
+      "migrated_code": "020"
+    },
+    "26": {
+      "name": "U-Bank",
+      "name_he": "יובנק",
+      "swift": "UBNKILIT",
+      "active": true,
+      "migrated_code": "026"
+    },
+    "31": {
+      "name": "International Bank of Israel (FIBI)",
+      "name_he": "הבנק הבינלאומי הראשון לישראל",
+      "swift": "FIBIILIT",
+      "active": true,
+      "migrated_code": "031"
+    },
+    "34": {
+      "name": "Arab Israel Bank",
+      "name_he": "בנק ערבי ישראלי",
+      "swift": null,
+      "active": true,
+      "migrated_code": "034"
+    },
+    "46": {
+      "name": "Bank of Jerusalem",
+      "name_he": "בנק ירושלים",
+      "swift": "JERSILJ1",
+      "active": true,
+      "migrated_code": "046"
+    },
+    "52": {
+      "name": "Bank Poalei Agudat Israel",
+      "name_he": "בנק פועלי אגודת ישראל",
+      "swift": null,
+      "active": true,
+      "migrated_code": "052"
+    },
+    "90": {
+      "name": "Israel Post Bank",
+      "name_he": "בנק הדואר",
+      "swift": null,
+      "active": true,
+      "migrated_code": "090"
+    }
+  },
+
+  "metadata": {
+    "total_active": 14,
+    "code_format_pre_migration": "2-digit zero-padded (e.g. '10')",
+    "code_format_post_migration": "3-digit zero-padded (e.g. '010')",
+    "regulation_reference": "Bank of Israel Directive — Clearing Code Format Update",
+    "effective_date": "2026-07-01"
+  }
+}
