@@ -1,6 +1,6 @@
 // ============================================================
 // Israeli Payroll System — Payroll REST Routes
-// Bank of Israel bank codes: 2-digit format (PRE-MIGRATION)
+// Bank of Israel bank codes: 3-digit format (POST-MIGRATION)
 // ============================================================
 
 import { Router, Request, Response } from 'express';
@@ -20,10 +20,9 @@ export function createPayrollRouter(service: PayrollService): Router {
     try {
       const codes = await service.getActiveBankCodes();
       // Format bank codes for display
-      // TODO (MIGRATION): padStart(2, '0') → padStart(3, '0')
       const formatted = codes.map(c => ({
         ...c,
-        bankCodeDisplay: c.bankCode.padStart(2, '0'),
+        bankCodeDisplay: c.bankCode.padStart(3, '0'),
       }));
       res.json({ bankCodes: formatted });
     } catch (err) {
@@ -50,8 +49,7 @@ export function createPayrollRouter(service: PayrollService): Router {
       });
     }
 
-    // Length guard — expect exactly 2 digits (or a normalizable value ≤ 2 chars)
-    // TODO (MIGRATION): length guard BANK_CODE_LENGTH is 2 → 3
+    // Length guard
     if (bankCode.trim().length > BANK_CODE_LENGTH) {
       return res.status(400).json({
         valid:  false,
@@ -78,11 +76,10 @@ export function createPayrollRouter(service: PayrollService): Router {
         return res.status(404).json({ error: 'Employee not found' });
       }
 
-      // TODO (MIGRATION): padStart(2, '0') → padStart(3, '0')
       return res.json({
         employeeId:    employee.employeeId,
         fullName:      employee.fullName,
-        bankCode:      employee.bankCode.padStart(2, '0'),
+        bankCode:      employee.bankCode.padStart(3, '0'),
         bankName:      service.getBankName(employee.bankCode),
         branchNumber:  employee.branchNumber,
         accountNumber: employee.accountNumber,
@@ -104,9 +101,8 @@ export function createPayrollRouter(service: PayrollService): Router {
     };
     const changedBy = (req.headers['x-user-id'] as string) ?? 'system';
 
-    // Inline validation: must be a 2-digit known code
-    // TODO (MIGRATION): regex /^\d{2}$/ → /^\d{3}$/
-    if (!bankCode || !/^\d{1,2}$/.test(bankCode.trim())) {
+    // Inline validation: must be a known code
+    if (!bankCode || !/^\d{1,3}$/.test(bankCode.trim())) {
       return res.status(400).json({
         error: `Bank code must be 1–${BANK_CODE_LENGTH} digits (will be zero-padded to ${BANK_CODE_LENGTH})`,
       });
@@ -161,8 +157,7 @@ export function createPayrollRouter(service: PayrollService): Router {
     try {
       const grouped = await service.getEntriesByBank(req.params.runId);
       const summary = Array.from(grouped.entries()).map(([bankCode, entries]) => ({
-        // TODO (MIGRATION): padStart(2, '0') → padStart(3, '0')
-        bankCode:     bankCode.padStart(2, '0'),
+        bankCode:     bankCode.padStart(3, '0'),
         bankName:     service.getBankName(bankCode),
         entryCount:   entries.length,
         totalNet:     entries.reduce((sum, e) => sum + e.netSalary, 0),

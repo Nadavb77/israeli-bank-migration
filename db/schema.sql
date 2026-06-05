@@ -1,6 +1,6 @@
 -- ============================================================
 -- Israeli Payroll System — Database Schema
--- Bank of Israel bank codes: 2-digit format (PRE-MIGRATION)
+-- Bank of Israel bank codes: 3-digit format (POST-MIGRATION)
 -- ============================================================
 
 -- Extension for UUID primary keys
@@ -8,36 +8,35 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- ------------------------------------------------------------
 -- Lookup table: valid BOI bank codes
--- NOTE: bank_code is CHAR(2) — must be migrated to CHAR(3)
+-- NOTE: bank_code is CHAR(3) — migrated from CHAR(2)
 -- ------------------------------------------------------------
 CREATE TABLE bank_codes (
-    bank_code   CHAR(2)      NOT NULL,
+    bank_code   CHAR(3)      NOT NULL,
     bank_name   VARCHAR(100) NOT NULL,
     swift_code  VARCHAR(11),
     active      BOOLEAN      NOT NULL DEFAULT TRUE,
     created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
 
     CONSTRAINT pk_bank_codes PRIMARY KEY (bank_code),
-    -- TODO (MIGRATION): update regex from {2} to {3}
-    CONSTRAINT chk_bank_code_format CHECK (bank_code ~ '^[0-9]{2}$')
+    CONSTRAINT chk_bank_code_format CHECK (bank_code ~ '^[0-9]{3}$')
 );
 
--- Seed: official BOI 2-digit codes (PRE-MIGRATION)
+-- Seed: official BOI 3-digit codes (POST-MIGRATION)
 INSERT INTO bank_codes (bank_code, bank_name, swift_code) VALUES
-    ('04', 'Bank Yahav',                    'YAHVILITXXX'),
-    ('10', 'Bank Leumi',                    'LUMIILITXXX'),
-    ('11', 'Discount Bank',                 'DISCILIT'),
-    ('12', 'Bank Hapoalim',                 'POALILIT'),
-    ('13', 'Union Bank (Igud)',              'UNIOILIT'),
-    ('14', 'Otzar Hahayal Bank',            'OTZRILIT'),
-    ('17', 'Mercantile Discount Bank',      'MRCLILITMTE'),
-    ('20', 'Mizrahi-Tefahot Bank',          'MIZBILIT'),
-    ('26', 'U-Bank',                        'UBNKILIT'),
-    ('31', 'International Bank of Israel',  'FIBIILIT'),
-    ('34', 'Arab Israel Bank',              NULL),
-    ('46', 'Bank of Jerusalem',             'JERSILJ1'),
-    ('52', 'Bank Poalei Agudat Israel',     NULL),
-    ('90', 'Israel Post Bank',              NULL);
+    ('004', 'Bank Yahav',                    'YAHVILITXXX'),
+    ('010', 'Bank Leumi',                    'LUMIILITXXX'),
+    ('011', 'Discount Bank',                 'DISCILIT'),
+    ('012', 'Bank Hapoalim',                 'POALILIT'),
+    ('013', 'Union Bank (Igud)',              'UNIOILIT'),
+    ('014', 'Otzar Hahayal Bank',            'OTZRILIT'),
+    ('017', 'Mercantile Discount Bank',      'MRCLILITMTE'),
+    ('020', 'Mizrahi-Tefahot Bank',          'MIZBILIT'),
+    ('026', 'U-Bank',                        'UBNKILIT'),
+    ('031', 'International Bank of Israel',  'FIBIILIT'),
+    ('034', 'Arab Israel Bank',              NULL),
+    ('046', 'Bank of Jerusalem',             'JERSILJ1'),
+    ('052', 'Bank Poalei Agudat Israel',     NULL),
+    ('090', 'Israel Post Bank',              NULL);
 
 -- ------------------------------------------------------------
 -- Employees table
@@ -46,8 +45,7 @@ CREATE TABLE employees (
     employee_id     UUID         NOT NULL DEFAULT uuid_generate_v4(),
     full_name       VARCHAR(200) NOT NULL,
     id_number       CHAR(9)      NOT NULL,   -- Israeli Teudat Zehut
-    -- NOTE (MIGRATION): bank_code CHAR(2) → CHAR(3)
-    bank_code       CHAR(2)      NOT NULL,
+    bank_code       CHAR(3)      NOT NULL,
     branch_number   CHAR(3)      NOT NULL,
     account_number  VARCHAR(13)  NOT NULL,
     department      VARCHAR(100),
@@ -59,8 +57,7 @@ CREATE TABLE employees (
 
     CONSTRAINT pk_employees PRIMARY KEY (employee_id),
     CONSTRAINT uq_employees_id_number UNIQUE (id_number),
-    -- TODO (MIGRATION): update regex from {2} to {3}
-    CONSTRAINT chk_employees_bank_code CHECK (bank_code ~ '^[0-9]{2}$'),
+    CONSTRAINT chk_employees_bank_code CHECK (bank_code ~ '^[0-9]{3}$'),
     CONSTRAINT chk_employees_branch CHECK (branch_number ~ '^[0-9]{3}$'),
     CONSTRAINT chk_employees_account CHECK (account_number ~ '^[0-9]{6,13}$'),
     CONSTRAINT fk_employees_bank_code FOREIGN KEY (bank_code)
@@ -94,8 +91,7 @@ CREATE TABLE payroll_entries (
     run_id          UUID          NOT NULL,
     employee_id     UUID          NOT NULL,
     -- Snapshot the bank details at time of payroll (denormalized intentionally)
-    -- NOTE (MIGRATION): bank_code CHAR(2) → CHAR(3)
-    bank_code       CHAR(2)       NOT NULL,
+    bank_code       CHAR(3)       NOT NULL,
     branch_number   CHAR(3)       NOT NULL,
     account_number  VARCHAR(13)   NOT NULL,
     gross_salary    NUMERIC(12,2) NOT NULL,
@@ -110,8 +106,7 @@ CREATE TABLE payroll_entries (
     CONSTRAINT pk_payroll_entries PRIMARY KEY (entry_id),
     CONSTRAINT fk_payroll_entries_run FOREIGN KEY (run_id) REFERENCES payroll_runs (run_id),
     CONSTRAINT fk_payroll_entries_emp FOREIGN KEY (employee_id) REFERENCES employees (employee_id),
-    -- TODO (MIGRATION): update regex from {2} to {3}
-    CONSTRAINT chk_entry_bank_code CHECK (bank_code ~ '^[0-9]{2}$')
+    CONSTRAINT chk_entry_bank_code CHECK (bank_code ~ '^[0-9]{3}$')
 );
 
 -- ------------------------------------------------------------
@@ -121,9 +116,8 @@ CREATE TABLE bank_code_audit (
     audit_id        BIGSERIAL    NOT NULL,
     table_name      VARCHAR(100) NOT NULL,
     record_id       UUID         NOT NULL,
-    -- NOTE (MIGRATION): old_bank_code and new_bank_code CHAR(2) → CHAR(3)
-    old_bank_code   CHAR(2),
-    new_bank_code   CHAR(2),
+    old_bank_code   CHAR(3),
+    new_bank_code   CHAR(3),
     changed_by      VARCHAR(100),
     changed_at      TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
 
@@ -140,8 +134,7 @@ SELECT
     pr.run_date,
     e.full_name,
     e.id_number,
-    -- NOTE (MIGRATION): LPAD to 2 digits → 3 digits
-    LPAD(pe.bank_code, 2, '0')                          AS bank_code_display,
+    LPAD(pe.bank_code, 3, '0')                          AS bank_code_display,
     bc.bank_name,
     pe.branch_number,
     pe.account_number,
@@ -165,8 +158,7 @@ SELECT
     e.employee_id,
     e.full_name,
     e.id_number,
-    -- NOTE (MIGRATION): LPAD 2 → 3
-    LPAD(e.bank_code, 2, '0')    AS bank_code,
+    LPAD(e.bank_code, 3, '0')    AS bank_code,
     bc.bank_name,
     bc.swift_code,
     e.branch_number,

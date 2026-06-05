@@ -1,26 +1,23 @@
 // ============================================================
 // Israeli Payroll System — Application Constants
-// Bank of Israel bank codes: 2-digit format (PRE-MIGRATION)
+// Bank of Israel bank codes: 3-digit format (POST-MIGRATION)
 // ============================================================
 
 /**
  * The required length for BOI bank codes.
- * TODO (MIGRATION): update from 2 to 3
  */
-export const BANK_CODE_LENGTH = 2;
+export const BANK_CODE_LENGTH = 3;
 
 /**
  * Regex pattern for a valid bank code.
- * Exactly 2 decimal digits.
- * TODO (MIGRATION): change {2} to {3}
+ * Exactly 3 decimal digits.
  */
-export const BANK_CODE_REGEX = /^\d{2}$/;
+export const BANK_CODE_REGEX = /^\d{3}$/;
 
 /**
  * Regex pattern for validating bank codes in user input (allows leading spaces).
- * TODO (MIGRATION): change {2} to {3}
  */
-export const BANK_CODE_INPUT_REGEX = /^\s*\d{1,2}\s*$/;
+export const BANK_CODE_INPUT_REGEX = /^\s*\d{1,3}\s*$/;
 
 /**
  * The padding character used to normalize shorter codes.
@@ -35,32 +32,29 @@ export const BRANCH_CODE_LENGTH = 3;
 /**
  * MASAV file format: byte offset where the bank code field starts (0-indexed).
  * In a MASAV record, bytes 0–1 are the record type, byte 2 is a separator,
- * bytes 3–4 are the bank code (2 bytes), byte 5 is a separator.
- * TODO (MIGRATION): after widening bank code by 1 byte, update all subsequent offsets.
+ * bytes 3–5 are the bank code (3 bytes), byte 6 is a separator.
  */
 export const MASAV_BANK_CODE_OFFSET = 3;
-export const MASAV_BANK_CODE_END    = 5;   // exclusive; TODO (MIGRATION): → 6
-export const MASAV_BRANCH_OFFSET    = 5;   // TODO (MIGRATION): → 6
-export const MASAV_BRANCH_END       = 8;   // TODO (MIGRATION): → 9
-export const MASAV_ACCOUNT_OFFSET   = 8;   // TODO (MIGRATION): → 9
-export const MASAV_ACCOUNT_END      = 21;  // TODO (MIGRATION): → 22
-export const MASAV_AMOUNT_OFFSET    = 21;  // TODO (MIGRATION): → 22
-export const MASAV_AMOUNT_END       = 30;  // TODO (MIGRATION): → 31
-export const MASAV_NAME_OFFSET      = 30;  // TODO (MIGRATION): → 31
-export const MASAV_NAME_END         = 46;  // TODO (MIGRATION): → 47
+export const MASAV_BANK_CODE_END    = 6;
+export const MASAV_BRANCH_OFFSET    = 6;
+export const MASAV_BRANCH_END       = 9;
+export const MASAV_ACCOUNT_OFFSET   = 9;
+export const MASAV_ACCOUNT_END      = 22;
+export const MASAV_AMOUNT_OFFSET    = 22;
+export const MASAV_AMOUNT_END       = 31;
+export const MASAV_NAME_OFFSET      = 31;
+export const MASAV_NAME_END         = 47;
 
 /**
  * Total MASAV record length in bytes.
- * TODO (MIGRATION): → 97 (add 1 for the widened bank code field)
  */
-export const MASAV_RECORD_LENGTH = 96;
+export const MASAV_RECORD_LENGTH = 97;
 
 /**
  * Display format string for bank code columns in reports.
- * Width is 2 to match BANK_CODE_LENGTH.
- * TODO (MIGRATION): width → 3
+ * Width is 3 to match BANK_CODE_LENGTH.
  */
-export const BANK_CODE_DISPLAY_WIDTH = 2;
+export const BANK_CODE_DISPLAY_WIDTH = 3;
 
 /**
  * Error messages — include expected length so they must change too.

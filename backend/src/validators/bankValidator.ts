@@ -1,6 +1,6 @@
 // ============================================================
 // Israeli Payroll System — Bank Account Validator
-// Bank of Israel bank codes: 2-digit format (PRE-MIGRATION)
+// Bank of Israel bank codes: 3-digit format (POST-MIGRATION)
 // ============================================================
 
 import { BankCode, VALID_BANK_CODES, isBankCode } from '../models/BankCode';
@@ -22,20 +22,17 @@ export interface ValidationResult {
 }
 
 /**
- * Normalize a raw bank code input to the canonical 2-digit format.
- * Strips whitespace, then zero-pads to 2 characters.
- *
- * TODO (MIGRATION): change padStart(2, '0') → padStart(3, '0')
+ * Normalize a raw bank code input to the canonical 3-digit format.
+ * Strips whitespace, then zero-pads to 3 characters.
  *
  * @example
- *   normalizeBankCode('10')  // → '10'
- *   normalizeBankCode(' 10 ') // → '10'
- *   normalizeBankCode('4')   // → '04'   (zero-padded)
+ *   normalizeBankCode('10')  // → '010'
+ *   normalizeBankCode(' 10 ') // → '010'
+ *   normalizeBankCode('4')   // → '004'
  */
 export function normalizeBankCode(raw: string): string {
   if (!raw) return '';
-  // TODO (MIGRATION): padStart(2, '0') → padStart(3, '0')
-  return raw.trim().padStart(2, '0');
+  return raw.trim().padStart(3, '0');
 }
 
 /**
@@ -43,12 +40,8 @@ export function normalizeBankCode(raw: string): string {
  *
  * Rules:
  * 1. Must not be empty
- * 2. After normalization, must match /^\d{2}$/ (exactly 2 digits)
+ * 2. After normalization, must match /^\d{3}$/ (exactly 3 digits)
  * 3. Must be a known BOI bank code
- *
- * TODO (MIGRATION):
- *  - Step 2 regex: /^\d{2}$/ → /^\d{3}$/
- *  - BANK_CODE_LENGTH check: 2 → 3 (already driven by constant, but verify)
  *
  * @returns { valid, errors, normalizedCode }
  */
@@ -65,15 +58,13 @@ export function validateBankCode(raw: string): {
 
   const normalized = normalizeBankCode(raw);
 
-  // Format check: must be exactly 2 digits
-  // TODO (MIGRATION): update regex to /^\d{3}$/
+  // Format check: must be exactly 3 digits
   if (!BANK_CODE_REGEX.test(normalized)) {
     errors.push(ERROR_MESSAGES.INVALID_BANK_CODE_FORMAT);
     return { valid: false, errors };
   }
 
   // Length double-check (defensive guard)
-  // TODO (MIGRATION): BANK_CODE_LENGTH is 2 — will become 3 after constant update
   if (normalized.length !== BANK_CODE_LENGTH) {
     errors.push(ERROR_MESSAGES.INVALID_BANK_CODE_LENGTH);
     return { valid: false, errors };
@@ -90,9 +81,6 @@ export function validateBankCode(raw: string): {
 
 /**
  * Validate a complete bank account (bank code + branch + account number).
- *
- * TODO (MIGRATION): after updating validateBankCode, this function will
- * automatically handle 3-digit codes if the regex and constant are updated.
  */
 export function validateBankAccount(
   rawBankCode:    string,
@@ -126,7 +114,6 @@ export function validateBankAccount(
     valid: true,
     errors: [],
     normalized: {
-      // TODO (MIGRATION): normalizeBankCode returns 2-char → will return 3-char after update
       bankCode:      normalizeBankCode(rawBankCode),
       branchNumber:  branchNumber.trim(),
       accountNumber: accountNumber.trim(),
@@ -137,16 +124,13 @@ export function validateBankAccount(
 /**
  * Validate bank code only (no branch/account).
  * Thin wrapper used in form field-level validation.
- *
- * TODO (MIGRATION): regex literal here must also change
  */
 export function validateBankCodeOnly(raw: string): string | null {
   if (!raw || raw.trim() === '') {
     return ERROR_MESSAGES.BANK_CODE_REQUIRED;
   }
-  const normalized = raw.trim().padStart(2, '0');  // TODO (MIGRATION): padStart(3, '0')
-  // TODO (MIGRATION): /^\d{2}$/ → /^\d{3}$/
-  if (!/^\d{2}$/.test(normalized)) {
+  const normalized = raw.trim().padStart(3, '0');
+  if (!/^\d{3}$/.test(normalized)) {
     return ERROR_MESSAGES.INVALID_BANK_CODE_FORMAT;
   }
   if (!isBankCode(normalized)) {
@@ -157,15 +141,13 @@ export function validateBankCodeOnly(raw: string): string | null {
 
 /**
  * Format a bank code for display: always shows full padded digits.
- * TODO (MIGRATION): padStart(2, '0') → padStart(3, '0')
  */
 export function formatBankCode(code: string): string {
-  return code.padStart(2, '0');  // TODO (MIGRATION)
+  return code.padStart(3, '0');
 }
 
 /**
  * Returns a list of all valid bank codes for dropdown menus.
- * TODO (MIGRATION): VALID_BANK_CODES already drives this — updating the array is enough
  */
 export function getValidBankCodes(): readonly BankCode[] {
   return VALID_BANK_CODES;

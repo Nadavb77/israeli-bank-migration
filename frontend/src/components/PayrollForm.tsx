@@ -1,23 +1,22 @@
 // ============================================================
 // Israeli Payroll System — Payroll Entry Form (React)
-// Bank of Israel bank codes: 2-digit format (PRE-MIGRATION)
+// Bank of Israel bank codes: 3-digit format (POST-MIGRATION)
 // ============================================================
 
 import React, { useState, useEffect, ChangeEvent, FormEvent } from 'react';
 
-// TODO (MIGRATION): update these constants when validator is updated
-const BANK_CODE_MAX_LENGTH = 2;   // TODO (MIGRATION): → 3
-const BANK_CODE_PLACEHOLDER = 'e.g. 10';  // TODO (MIGRATION): → 'e.g. 010'
+const BANK_CODE_MAX_LENGTH = 3;
+const BANK_CODE_PLACEHOLDER = 'e.g. 010';
 
 interface BankCodeOption {
-  /** 2-digit code. TODO (MIGRATION): will be 3-digit after migration */
+  /** 3-digit code */
   bankCode:  string;
   bankName:  string;
 }
 
 interface PayrollFormValues {
   employeeId:    string;
-  /** 2-digit bank code. TODO (MIGRATION): will hold 3-digit value */
+  /** 3-digit bank code */
   bankCode:      string;
   branchNumber:  string;
   accountNumber: string;
@@ -66,22 +65,21 @@ export default function PayrollForm({
       })
       .catch(() => {
         // Fallback: populate from known codes
-        // TODO (MIGRATION): update all these string literals to 3-digit
         setBankOptions([
-          { bankCode: '04', bankName: 'Bank Yahav' },
-          { bankCode: '10', bankName: 'Bank Leumi' },
-          { bankCode: '11', bankName: 'Discount Bank' },
-          { bankCode: '12', bankName: 'Bank Hapoalim' },
-          { bankCode: '13', bankName: 'Union Bank (Igud)' },
-          { bankCode: '14', bankName: 'Otzar Hahayal Bank' },
-          { bankCode: '17', bankName: 'Mercantile Discount Bank' },
-          { bankCode: '20', bankName: 'Mizrahi-Tefahot Bank' },
-          { bankCode: '26', bankName: 'U-Bank' },
-          { bankCode: '31', bankName: 'International Bank (FIBI)' },
-          { bankCode: '34', bankName: 'Arab Israel Bank' },
-          { bankCode: '46', bankName: 'Bank of Jerusalem' },
-          { bankCode: '52', bankName: 'Bank Poalei Agudat Israel' },
-          { bankCode: '90', bankName: 'Israel Post Bank' },
+          { bankCode: '004', bankName: 'Bank Yahav' },
+          { bankCode: '010', bankName: 'Bank Leumi' },
+          { bankCode: '011', bankName: 'Discount Bank' },
+          { bankCode: '012', bankName: 'Bank Hapoalim' },
+          { bankCode: '013', bankName: 'Union Bank (Igud)' },
+          { bankCode: '014', bankName: 'Otzar Hahayal Bank' },
+          { bankCode: '017', bankName: 'Mercantile Discount Bank' },
+          { bankCode: '020', bankName: 'Mizrahi-Tefahot Bank' },
+          { bankCode: '026', bankName: 'U-Bank' },
+          { bankCode: '031', bankName: 'International Bank (FIBI)' },
+          { bankCode: '034', bankName: 'Arab Israel Bank' },
+          { bankCode: '046', bankName: 'Bank of Jerusalem' },
+          { bankCode: '052', bankName: 'Bank Poalei Agudat Israel' },
+          { bankCode: '090', bankName: 'Israel Post Bank' },
         ]);
       });
   }, []);
@@ -94,10 +92,8 @@ export default function PayrollForm({
     switch (name) {
       case 'bankCode': {
         if (!value) return 'Bank code is required';
-        // TODO (MIGRATION): /^\d{2}$/ → /^\d{3}$/
-        if (!/^\d{2}$/.test(value.padStart(2, '0'))) {
-          // TODO (MIGRATION): "2-digit" → "3-digit" in message
-          return `Bank code must be a valid 2-digit BOI code`;
+        if (!/^\d{3}$/.test(value.padStart(3, '0'))) {
+          return `Bank code must be a valid 3-digit BOI code`;
         }
         return undefined;
       }
@@ -160,10 +156,8 @@ export default function PayrollForm({
     if (!validateAll()) return;
 
     // Final bank code check before submit
-    // TODO (MIGRATION): padStart(2, '0') → padStart(3, '0')
-    const normalizedBankCode = values.bankCode.trim().padStart(2, '0');
-    // TODO (MIGRATION): /^\d{2}$/ → /^\d{3}$/
-    if (!/^\d{2}$/.test(normalizedBankCode)) {
+    const normalizedBankCode = values.bankCode.trim().padStart(3, '0');
+    if (!/^\d{3}$/.test(normalizedBankCode)) {
       setErrors(prev => ({ ...prev, bankCode: 'Invalid bank code format' }));
       return;
     }
@@ -193,8 +187,7 @@ export default function PayrollForm({
         {/* Bank Code */}
         <div className="form-group">
           <label htmlFor="bankCode">
-            {/* TODO (MIGRATION): "2-digit" → "3-digit" in label */}
-            Bank Code <span className="hint">(2-digit BOI code)</span>
+            Bank Code <span className="hint">(3-digit BOI code)</span>
           </label>
 
           {/* Dropdown option — preferred */}
@@ -209,8 +202,7 @@ export default function PayrollForm({
             <option value="">-- Select bank --</option>
             {bankOptions.map(opt => (
               <option key={opt.bankCode} value={opt.bankCode}>
-                {/* TODO (MIGRATION): opt.bankCode.padStart(2, '0') → padStart(3, '0') */}
-                {opt.bankCode.padStart(2, '0')} — {opt.bankName}
+                {opt.bankCode.padStart(3, '0')} — {opt.bankName}
               </option>
             ))}
           </select>
@@ -223,10 +215,9 @@ export default function PayrollForm({
             value={values.bankCode}
             onChange={handleChange}
             placeholder={BANK_CODE_PLACEHOLDER}
-            // TODO (MIGRATION): maxLength={2} → maxLength={3}
             maxLength={BANK_CODE_MAX_LENGTH}
             inputMode="numeric"
-            pattern="\d{2}"             // TODO (MIGRATION): \d{2} → \d{3}
+            pattern="\d{3}"
             autoComplete="off"
             aria-label="Manual bank code entry"
           />
