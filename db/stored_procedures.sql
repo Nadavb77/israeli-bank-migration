@@ -1,32 +1,29 @@
 -- ============================================================
 -- Israeli Payroll System — Stored Procedures & Functions
--- Bank of Israel bank codes: 2-digit format (PRE-MIGRATION)
+-- Bank of Israel bank codes: 3-digit format (POST-MIGRATION)
 -- ============================================================
 
 -- ------------------------------------------------------------
 -- Function: normalize_bank_code
--- Accepts a raw string, validates it is a known 2-digit BOI code.
--- NOTE (MIGRATION): LPAD 2 → 3; regex {2} → {3}
+-- Accepts a raw string, validates it is a known 3-digit BOI code.
 -- ------------------------------------------------------------
 CREATE OR REPLACE FUNCTION normalize_bank_code(raw_code TEXT)
-RETURNS CHAR(2)   -- TODO (MIGRATION): return type CHAR(2) → CHAR(3)
+RETURNS CHAR(3)
 LANGUAGE plpgsql
 AS $$
 DECLARE
-    normalized CHAR(2);  -- TODO (MIGRATION): CHAR(2) → CHAR(3)
+    normalized CHAR(3);
 BEGIN
     IF raw_code IS NULL OR TRIM(raw_code) = '' THEN
         RAISE EXCEPTION 'Bank code cannot be null or empty';
     END IF;
 
-    -- Zero-pad to 2 digits
-    -- TODO (MIGRATION): LPAD(..., 2, '0') → LPAD(..., 3, '0')
-    normalized := LPAD(TRIM(raw_code), 2, '0');
+    -- Zero-pad to 3 digits
+    normalized := LPAD(TRIM(raw_code), 3, '0');
 
-    -- Validate format: exactly 2 numeric digits
-    -- TODO (MIGRATION): regex '^[0-9]{2}$' → '^[0-9]{3}$'
-    IF normalized !~ '^[0-9]{2}$' THEN
-        RAISE EXCEPTION 'Invalid bank code format: %. Expected 2-digit numeric code.', raw_code;
+    -- Validate format: exactly 3 numeric digits
+    IF normalized !~ '^[0-9]{3}$' THEN
+        RAISE EXCEPTION 'Invalid bank code format: %. Expected 3-digit numeric code.', raw_code;
     END IF;
 
     -- Validate against lookup table
@@ -52,7 +49,7 @@ RETURNS BOOLEAN
 LANGUAGE plpgsql
 AS $$
 DECLARE
-    v_bank CHAR(2);  -- TODO (MIGRATION): CHAR(2) → CHAR(3)
+    v_bank CHAR(3);
 BEGIN
     -- Validate and normalize bank code
     v_bank := normalize_bank_code(p_bank_code);
@@ -79,7 +76,7 @@ $$;
 CREATE OR REPLACE FUNCTION create_payroll_entry(
     p_run_id        UUID,
     p_employee_id   UUID,
-    p_bank_code     CHAR(2),   -- TODO (MIGRATION): CHAR(2) → CHAR(3)
+    p_bank_code     CHAR(3),
     p_branch        CHAR(3),
     p_account       VARCHAR(13),
     p_gross         NUMERIC(12,2)
@@ -125,7 +122,7 @@ $$;
 -- NOTE (MIGRATION): p_bank_code CHAR(2) → CHAR(3)
 -- ------------------------------------------------------------
 CREATE OR REPLACE FUNCTION get_entries_by_bank(
-    p_bank_code  CHAR(2),   -- TODO (MIGRATION): CHAR(2) → CHAR(3)
+    p_bank_code  CHAR(3),
     p_pay_period CHAR(7)
 )
 RETURNS TABLE (
@@ -137,10 +134,9 @@ RETURNS TABLE (
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    -- Validate 2-digit format before querying
-    -- TODO (MIGRATION): length check 2 → 3
-    IF length(p_bank_code) != 2 OR p_bank_code !~ '^[0-9]{2}$' THEN
-        RAISE EXCEPTION 'Bank code must be exactly 2 digits. Got: %', p_bank_code;
+    -- Validate 3-digit format before querying
+    IF length(p_bank_code) != 3 OR p_bank_code !~ '^[0-9]{3}$' THEN
+        RAISE EXCEPTION 'Bank code must be exactly 3 digits. Got: %', p_bank_code;
     END IF;
 
     RETURN QUERY
@@ -164,7 +160,7 @@ $$;
 -- ------------------------------------------------------------
 CREATE OR REPLACE FUNCTION update_employee_bank_details(
     p_employee_id   UUID,
-    p_new_bank_code CHAR(2),   -- TODO (MIGRATION): CHAR(2) → CHAR(3)
+    p_new_bank_code CHAR(3),
     p_new_branch    CHAR(3),
     p_new_account   VARCHAR(13),
     p_changed_by    VARCHAR(100)
@@ -173,7 +169,7 @@ RETURNS VOID
 LANGUAGE plpgsql
 AS $$
 DECLARE
-    v_old_bank_code CHAR(2);   -- TODO (MIGRATION): CHAR(2) → CHAR(3)
+    v_old_bank_code CHAR(3);
 BEGIN
     -- Read current value for audit
     SELECT bank_code INTO v_old_bank_code
@@ -216,8 +212,7 @@ RETURNS TABLE (
 LANGUAGE sql
 AS $$
     SELECT
-        -- TODO (MIGRATION): LPAD 2 → 3
-        LPAD(e.bank_code, 2, '0')   AS bank_code_display,
+        LPAD(e.bank_code, 3, '0')   AS bank_code_display,
         bc.bank_name,
         COUNT(e.employee_id)         AS employee_count,
         COALESCE(SUM(pe.net_salary), 0) AS total_net_salary

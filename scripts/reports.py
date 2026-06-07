@@ -1,15 +1,10 @@
 #!/usr/bin/env python3
 """
 Israeli Payroll System — Payroll Reports
-Bank of Israel bank codes: 2-digit format (PRE-MIGRATION)
+Bank of Israel bank codes: 3-digit format (POST-MIGRATION)
 
 Generates payroll summary and bank distribution reports.
 Bank code column width is driven by BANK_CODE_WIDTH.
-
-TODO (MIGRATION): update BANK_CODE_WIDTH from 2 to 3.
-The constant controls all format strings, column headers, and
-separator line widths — so a single constant change propagates
-most of the display fixes automatically.
 """
 
 import csv
@@ -22,12 +17,10 @@ import psycopg2
 # Constants
 # ============================================================
 
-# TODO (MIGRATION): BANK_CODE_WIDTH = 2 → 3
-BANK_CODE_WIDTH = 2
+BANK_CODE_WIDTH = 3
 
 # Column widths for fixed-width report formatting
-# TODO (MIGRATION): BANK_CODE_WIDTH used throughout — update the constant to fix all
-COL_BANK_CODE  = BANK_CODE_WIDTH   # TODO (MIGRATION): → 3
+COL_BANK_CODE  = BANK_CODE_WIDTH
 COL_BANK_NAME  = 30
 COL_BRANCH     = 6
 COL_ACCOUNT    = 14
@@ -37,9 +30,8 @@ COL_NET        = 12
 COL_COUNT      = 8
 
 # Header separator width — sums all columns + padding
-# TODO (MIGRATION): after BANK_CODE_WIDTH changes to 3, this auto-updates
 SEPARATOR_WIDTH = (
-    COL_BANK_CODE + 2 +  # COL_BANK_CODE is 2 pre-migration
+    COL_BANK_CODE + 2 +
     COL_BANK_NAME + 2 +
     COL_BRANCH    + 2 +
     COL_ACCOUNT   + 2 +
@@ -50,10 +42,7 @@ SEPARATOR_WIDTH = (
 
 
 def _format_bank_code(code: str) -> str:
-    """
-    Format a bank code for display with zero-padding.
-    TODO (MIGRATION): zfill(2) → zfill(3)
-    """
+    """Format a bank code for display with zero-padding."""
     return code.strip().zfill(BANK_CODE_WIDTH)
 
 
@@ -74,8 +63,7 @@ def report_bank_distribution(conn) -> str:
     cursor = conn.cursor()
     cursor.execute("""
         SELECT
-            -- TODO (MIGRATION): LPAD 2 → 3
-            LPAD(e.bank_code, 2, '0')          AS bank_code,
+            LPAD(e.bank_code, 3, '0')          AS bank_code,
             bc.bank_name,
             COUNT(e.employee_id)               AS emp_count,
             COALESCE(SUM(pe.net_salary), 0)    AS total_net
@@ -94,7 +82,6 @@ def report_bank_distribution(conn) -> str:
     lines.append("=" * SEPARATOR_WIDTH)
 
     # Header row
-    # TODO (MIGRATION): f"{'Code':>{COL_BANK_CODE}}" — COL_BANK_CODE is 2, becomes 3
     header = (
         f"{'Code':>{COL_BANK_CODE}}  "
         f"{'Bank Name':<{COL_BANK_NAME}}  "
@@ -106,7 +93,6 @@ def report_bank_distribution(conn) -> str:
 
     for row in rows:
         bank_code, bank_name, emp_count, total_net = row
-        # TODO (MIGRATION): _format_bank_code uses zfill(BANK_CODE_WIDTH=2) → 3
         line = (
             f"{_format_bank_code(bank_code):>{COL_BANK_CODE}}  "
             f"{bank_name:<{COL_BANK_NAME}}  "
@@ -132,8 +118,7 @@ def report_payroll_ledger(conn, pay_period: str) -> str:
     cursor.execute("""
         SELECT
             e.full_name,
-            -- TODO (MIGRATION): LPAD 2 → 3
-            LPAD(pe.bank_code, 2, '0')   AS bank_code,
+            LPAD(pe.bank_code, 3, '0')   AS bank_code,
             pe.branch_number,
             pe.account_number,
             pe.gross_salary,
@@ -154,7 +139,6 @@ def report_payroll_ledger(conn, pay_period: str) -> str:
     lines.append("=" * SEPARATOR_WIDTH)
 
     # Column headers
-    # TODO (MIGRATION): 'Code' column width COL_BANK_CODE is 2 → becomes 3
     header = (
         f"{'Name':<{COL_NAME}}  "
         f"{'Code':>{COL_BANK_CODE}}  "
@@ -178,7 +162,6 @@ def report_payroll_ledger(conn, pay_period: str) -> str:
         total_gross += gross
         total_net   += net_val
 
-        # TODO (MIGRATION): _format_bank_code pads to BANK_CODE_WIDTH=2 → 3
         line = (
             f"{name[:COL_NAME]:<{COL_NAME}}  "
             f"{_format_bank_code(bank_code):>{COL_BANK_CODE}}  "
@@ -193,7 +176,6 @@ def report_payroll_ledger(conn, pay_period: str) -> str:
     lines.append("=" * SEPARATOR_WIDTH)
     lines.append(
         f"{'TOTALS':<{COL_NAME}}  "
-        # TODO (MIGRATION): padding space count changes with COL_BANK_CODE
         f"{'':{COL_BANK_CODE + COL_BRANCH + COL_ACCOUNT + 6}}  "
         f"{_format_ils(total_gross):>{COL_GROSS}}  "
         f"{'':>{COL_NET}}  "
@@ -210,15 +192,13 @@ def export_csv(conn, pay_period: str) -> str:
     """
     CSV export of payroll data for integration with external systems.
     The 'bank_code' column is zero-padded to BANK_CODE_WIDTH digits.
-    TODO (MIGRATION): BANK_CODE_WIDTH 2 → 3 updates the padding automatically.
     """
     cursor = conn.cursor()
     cursor.execute("""
         SELECT
             e.id_number,
             e.full_name,
-            -- TODO (MIGRATION): LPAD 2 → 3
-            LPAD(pe.bank_code, 2, '0')   AS bank_code,
+            LPAD(pe.bank_code, 3, '0')   AS bank_code,
             pe.branch_number,
             pe.account_number,
             pe.gross_salary,
@@ -239,7 +219,6 @@ def export_csv(conn, pay_period: str) -> str:
     writer = csv.writer(output)
 
     # Header row
-    # TODO (MIGRATION): 'bank_code' column will hold 3-char strings after migration
     writer.writerow([
         'id_number', 'full_name', 'bank_code', 'branch_number', 'account_number',
         'gross_salary', 'income_tax', 'national_ins', 'health_ins', 'pension', 'net_salary',
@@ -250,7 +229,6 @@ def export_csv(conn, pay_period: str) -> str:
         writer.writerow([
             id_num,
             name,
-            # TODO (MIGRATION): zfill(2) → zfill(3)
             bank_code.strip().zfill(BANK_CODE_WIDTH),
             branch,
             account,
@@ -272,8 +250,7 @@ def export_csv(conn, pay_period: str) -> str:
 def report_bank_code_validation(conn) -> str:
     """
     Checks all employees for invalid or unrecognized bank codes.
-    PRE-MIGRATION: flags any code that is not a valid 2-digit BOI code.
-    TODO (MIGRATION): the regex and description must change to 3-digit.
+    Flags any code that is not a valid 3-digit BOI code.
     """
     import re
     cursor = conn.cursor()
@@ -288,14 +265,12 @@ def report_bank_code_validation(conn) -> str:
     issues = []
     for emp_id, name, bank_code in rows:
         normalized = bank_code.strip().zfill(BANK_CODE_WIDTH)
-        # TODO (MIGRATION): r'^\d{2}$' → r'^\d{3}$'
-        if not re.match(r'^\d{2}$', normalized):
+        if not re.match(r'^\d{3}$', normalized):
             issues.append(f"  [{emp_id}] {name}: invalid code '{bank_code}'")
 
     lines = ["BANK CODE VALIDATION REPORT"]
     lines.append(
-        # TODO (MIGRATION): "2-digit" → "3-digit"
-        f"Expected format: {BANK_CODE_WIDTH}-digit numeric code (e.g. '10')"
+        f"Expected format: {BANK_CODE_WIDTH}-digit numeric code (e.g. '010')"
     )
     lines.append(f"Employees checked: {len(rows)}")
 
@@ -330,7 +305,6 @@ if __name__ == '__main__':
         with open('payroll_2026_06.csv', 'w') as f:
             f.write(csv_output)
         print(f"\nCSV exported: payroll_2026_06.csv")
-        # TODO (MIGRATION): BANK_CODE_WIDTH in print also changes
         print(f"Bank code column width: {BANK_CODE_WIDTH} digits")
 
         conn.close()

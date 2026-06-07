@@ -1,6 +1,6 @@
 // ============================================================
 // Israeli Payroll System — Payroll Service
-// Bank of Israel bank codes: 2-digit format (PRE-MIGRATION)
+// Bank of Israel bank codes: 3-digit format (POST-MIGRATION)
 // ============================================================
 
 import { Pool } from 'pg';
@@ -12,7 +12,7 @@ export interface Employee {
   employeeId:    string;
   fullName:      string;
   idNumber:      string;
-  /** 2-digit BOI bank code. TODO (MIGRATION): → 3-digit */
+  /** 3-digit BOI bank code */
   bankCode:      BankCode;
   branchNumber:  string;
   accountNumber: string;
@@ -26,7 +26,7 @@ export interface PayrollEntry {
   entryId:       string;
   runId:         string;
   employeeId:    string;
-  /** 2-digit BOI bank code snapshot. TODO (MIGRATION): → 3-digit */
+  /** 3-digit BOI bank code snapshot */
   bankCode:      BankCode;
   branchNumber:  string;
   accountNumber: string;
@@ -56,8 +56,7 @@ export class PayrollService {
 
   /**
    * Fetch all active bank codes from the database.
-   * Returns records with 2-digit codes.
-   * TODO (MIGRATION): response objects will have 3-digit codes after migration
+   * Returns records with 3-digit codes.
    */
   async getActiveBankCodes(): Promise<BankCodeRecord[]> {
     const result = await this.db.query<{
@@ -66,8 +65,7 @@ export class PayrollService {
       swift_code: string | null;
       active:     boolean;
     }>(
-      // TODO (MIGRATION): LPAD 2 → 3 in this query
-      `SELECT LPAD(bank_code, 2, '0') AS bank_code, bank_name, swift_code, active
+      `SELECT LPAD(bank_code, 3, '0') AS bank_code, bank_name, swift_code, active
        FROM bank_codes
        WHERE active = TRUE
        ORDER BY bank_code`
@@ -82,10 +80,8 @@ export class PayrollService {
 
   /**
    * Look up a bank name by its code.
-   * TODO (MIGRATION): BANK_CODE_LABELS keys will update automatically
    */
   getBankName(bankCode: string): string {
-    // TODO (MIGRATION): normalizeBankCode pads to 2 → will pad to 3
     const normalized = normalizeBankCode(bankCode);
     return BANK_CODE_LABELS[normalized as BankCode] ?? `Unknown bank (${normalized})`;
   }
@@ -110,9 +106,8 @@ export class PayrollService {
       hire_date:      Date;
       active:         boolean;
     }>(
-      // TODO (MIGRATION): LPAD 2 → 3
       `SELECT employee_id, full_name, id_number,
-              LPAD(bank_code, 2, '0') AS bank_code,
+              LPAD(bank_code, 3, '0') AS bank_code,
               branch_number, account_number, department, position, hire_date, active
        FROM employees
        WHERE employee_id = $1`,
@@ -137,7 +132,6 @@ export class PayrollService {
   /**
    * Update an employee's bank account details.
    * Validates the new bank code before persisting.
-   * TODO (MIGRATION): validateBankAccount internally checks 2-digit → will check 3-digit
    */
   async updateEmployeeBankAccount(
     employeeId:    string,
@@ -209,12 +203,9 @@ export class PayrollService {
       const gross = grossSalaryMap[emp.employeeId];
       if (!gross) continue;
 
-      // Validate bank code is still a valid 2-digit code before processing
-      // TODO (MIGRATION): this will naturally validate 3-digit after validator update
       const validation = validateBankAccount(emp.bankCode, emp.branchNumber, emp.accountNumber);
       if (!validation.valid) {
         console.error(
-          // TODO (MIGRATION): BANK_CODE_DISPLAY_WIDTH is 2 → 3
           `Skipping employee ${emp.fullName}: invalid bank account ` +
           `(bank: ${formatBankCode(emp.bankCode).padStart(BANK_CODE_DISPLAY_WIDTH, '0')})`
         );
@@ -239,7 +230,6 @@ export class PayrollService {
   /**
    * Retrieve all entries for a payroll run, grouped by bank code.
    * Used by the MASAV file generator.
-   * TODO (MIGRATION): result bank_code values will be 2-digit → update to 3-digit
    */
   async getEntriesByBank(runId: string): Promise<Map<string, PayrollEntry[]>> {
     const result = await this.db.query<{
@@ -255,8 +245,7 @@ export class PayrollService {
       net_salary:     string;
       employee_id:    string;
     }>(
-      // TODO (MIGRATION): LPAD 2 → 3
-      `SELECT entry_id, LPAD(bank_code, 2, '0') AS bank_code,
+      `SELECT entry_id, LPAD(bank_code, 3, '0') AS bank_code,
               branch_number, account_number, gross_salary, income_tax,
               national_ins, health_ins, pension, net_salary, employee_id
        FROM payroll_entries
@@ -297,9 +286,8 @@ export class PayrollService {
       account_number: string;
       hire_date:      Date;
     }>(
-      // TODO (MIGRATION): LPAD 2 → 3
       `SELECT employee_id, full_name, id_number,
-              LPAD(bank_code, 2, '0') AS bank_code,
+              LPAD(bank_code, 3, '0') AS bank_code,
               branch_number, account_number, hire_date
        FROM employees
        WHERE active = TRUE`
