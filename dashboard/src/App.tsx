@@ -1,8 +1,9 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { migrationItems, MigrationItem, MigrationStatus, Layer } from './migrationData';
 import './App.css';
 
 const LAYERS: Layer[] = ['DB', 'Backend', 'Frontend', 'Scripts', 'Config'];
+const STORAGE_KEY = 'bank-migration-progress';
 
 const LAYER_COLORS: Record<Layer, string> = {
   DB: '#3b82f6',
@@ -12,8 +13,32 @@ const LAYER_COLORS: Record<Layer, string> = {
   Config: '#ef4444',
 };
 
+function loadPersistedItems(): MigrationItem[] {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const statusMap: Record<string, MigrationStatus> = JSON.parse(saved);
+      return migrationItems.map(item => ({
+        ...item,
+        status: statusMap[item.id] ?? item.status,
+      }));
+    }
+  } catch { /* ignore corrupt storage */ }
+  return migrationItems;
+}
+
 function App() {
-  const [items, setItems] = useState<MigrationItem[]>(migrationItems);
+  const [items, setItems] = useState<MigrationItem[]>(loadPersistedItems);
+
+  useEffect(() => {
+    const statusMap: Record<string, MigrationStatus> = {};
+    for (const item of items) {
+      if (item.status !== 'pending') {
+        statusMap[item.id] = item.status;
+      }
+    }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(statusMap));
+  }, [items]);
   const [filterLayer, setFilterLayer] = useState<Layer | 'All'>('All');
   const [filterStatus, setFilterStatus] = useState<MigrationStatus | 'All'>('All');
   const [expandedLayer, setExpandedLayer] = useState<Layer | null>(null);
